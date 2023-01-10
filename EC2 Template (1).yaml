@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to Create an EC2 instance
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Environment Tag information
+        Parameters:
+          - Application 
+          - Environment
+   
+Parameters:
+  ImageId:
+    Type: String
+    Description: 'Choose an Amazon Machine Image'
+    Default: 'ami-0e6329e222e662a52'
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+  KeyName:
+    Description: SSH Keypair to login to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: mykeypair
+  Application:
+    Description: Provide Name of the Application.
+    Type: String
+    Default: 'My First application'
+  Environment:
+    Description: The type of Env. For Ex- PROD, TEST, STG, NON-PROD.
+    Type: String
+    Default: 'PROD'  
+  InstanceName:
+    Type: String
+    Default: My web server
+  ApplicationId:
+    Type: String
+    Default: 123
+
+
+
+Resources:
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties: 
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceTypeParameter
+      KeyName: !Ref KeyName
+      SecurityGroupIds: 
+        - !Ref MySecurityGroup
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd.x86_64
+            systemctl start httpd.service
+            systemctl enable httpd.service
+            echo Hello this is basic EC2 template > /var/www/html/index.html
+
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
+        - Key: ApplicationId
+          Value: !Ref ApplicationId
+
+
+  MySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: SG to allow SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: EC2-SG
+Outputs:
+  DemoInstanceId:
+    Description: Instance Id 
+    Value: !Ref MyEC2Instance

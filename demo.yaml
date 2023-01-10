@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Temporary Working Stack"
+Resources:
+  WafWebAcl:
+    Type: "AWS::WAFv2::WebACL"
+    Properties:
+      Name: "demo"
+      Description: "Waf Web Acl to Block attacks"
+      Scope: "CLOUDFRONT"
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: "demo"
+        SampledRequestsEnabled: true
+      Rules:
+        - Name: "WafRule1"
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: "AWS"
+              Name: "AWSManagedRulesCommonRuleSet"
+          Priority: 1
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: "WafRule1"
+            SampledRequestsEnabled: true
+        - Name: "WafRule2"
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: "AWS"
+              Name: "AWSManagedRulesPHPRuleSet"
+          Priority: 2
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: "WafRule2"
+            SampledRequestsEnabled: true
+        - Name: "WafRule3"
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: "AWS"
+              Name: "AWSManagedRulesUnixRuleSet"
+          Priority: 3
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: "WafRule3"
+            SampledRequestsEnabled: true
+        - Name: "WafRule4"
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: "AWS"
+              Name: "AWSManagedRulesWindowsRuleSet"
+          Priority: 4
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: "WafRule4"
+            SampledRequestsEnabled: true
+        - Name: "WafRule5"
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: "AWS"
+              Name: "AWSManagedRulesSQLiRuleSet"
+          Priority: 5
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: "WafRule5"
+            SampledRequestsEnabled: true
+      

@@ -1,0 +1,168 @@
+  AWSTemplateFormatVersion: 2010-09-09
+  Description: Custom VPC Creation With Private and Public Subnet
+
+  Parameters:
+    VPCName:
+      Description: CIDR range for our VPC
+      Type: String
+      Default: DemoVPCTemplate 
+    VPCCidr:
+      Description: CIDR range for our VPC
+      Type: String
+      Default: 10.0.0.0/16
+    PrivateSubnetACidr:
+      Description: Private Subnet IP Range
+      Type: String
+      Default: 10.0.0.0/24
+    PrivateSubnetBCidr:
+      Description: Private Subnet IP Range
+      Type: String
+      Default: 10.0.1.0/24
+    PublicSubnetACidr:
+      Description: Public Subnet IP Range
+      Type: String
+      Default: 10.0.2.0/24
+    PublicSubnetBCidr:
+      Description: Public Subnet IP Range
+      Type: String
+      Default: 10.0.3.0/24
+    AvailabilityZoneA:
+      Description: Avaibalbility Zone 1
+      Type: String
+      Default: ap-south-1a
+    AvailabilityZoneB:
+      Description: Avaibalbility Zone 2
+      Type: String
+      Default: ap-south-1b     
+  Resources:
+    DemoVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        CidrBlock: !Ref VPCCidr
+        Tags:
+          - Key: Name
+            Value: !Ref VPCName
+            
+    PrivateSubnetA:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref DemoVPC
+        AvailabilityZone: !Ref AvailabilityZoneA
+        CidrBlock: !Ref PrivateSubnetACidr 
+
+    PrivateSubnetB:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref DemoVPC
+        AvailabilityZone: !Ref AvailabilityZoneB
+        CidrBlock: !Ref PrivateSubnetBCidr
+        
+    PublicSubnetA:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref DemoVPC
+        AvailabilityZone: !Ref AvailabilityZoneA
+        CidrBlock: !Ref PublicSubnetACidr
+        MapPublicIpOnLaunch: true 
+
+    PublicSubnetB:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref DemoVPC
+        AvailabilityZone: !Ref AvailabilityZoneB
+        CidrBlock: !Ref PublicSubnetBCidr
+        MapPublicIpOnLaunch: true
+
+    InternetGateway:
+      Type: AWS::EC2::InternetGateway
+
+    VPCGatewayAttachment:
+      Type: "AWS::EC2::VPCGatewayAttachment"
+      Properties:
+        VpcId: !Ref DemoVPC
+        InternetGatewayId: !Ref InternetGateway
+
+    PublicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref DemoVPC
+
+    PublicRoute:
+      Type: AWS::EC2::Route
+      DependsOn: VPCGatewayAttachment
+      Properties:
+        RouteTableId: !Ref PublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref InternetGateway
+
+    PublicSubnetRouteTableAssociationA:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PublicSubnetA
+        RouteTableId: !Ref PublicRouteTable
+
+    PublicSubnetRouteTableAssociationB:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PublicSubnetB
+        RouteTableId: !Ref PublicRouteTable
+
+    ElasticIPA:
+      Type: AWS::EC2::EIP
+      Properties:
+        Domain: vpc
+
+    ElasticIPB:
+      Type: AWS::EC2::EIP
+      Properties:
+        Domain: vpc
+
+    NATGatewayA:
+      Type: AWS::EC2::NatGateway
+      Properties:
+        AllocationId: !GetAtt ElasticIPA.AllocationId
+        SubnetId: !Ref PublicSubnetA
+
+    NATGatewayB:
+      Type: AWS::EC2::NatGateway
+      Properties:
+        AllocationId: !GetAtt ElasticIPB.AllocationId
+        SubnetId: !Ref PublicSubnetB
+
+    PrivateRouteTableA:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref DemoVPC
+
+    PrivateRouteTableB:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref DemoVPC
+
+    PrivateRouteToInternetA:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref PrivateRouteTableA
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NATGatewayA
+
+    PrivateRouteToInternetB:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref PrivateRouteTableB
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NATGatewayB
+
+    PrivateSubnetRouteTableAssociationA:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PrivateSubnetA
+        RouteTableId: !Ref PrivateRouteTableA
+
+    PrivateSubnetRouteTableAssociationB:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref PrivateSubnetB
+        RouteTableId: !Ref PrivateRouteTableB
